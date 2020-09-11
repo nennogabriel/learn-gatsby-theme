@@ -29,7 +29,7 @@ exports.sourceNodes = ({ actions }) => {
 exports.createResolvers = ({ createResolvers }) => {
   const basePath = '/'
 
-  const slugfy = str => {
+  const slugify = str => {
     const slug = str
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -41,10 +41,46 @@ exports.createResolvers = ({ createResolvers }) => {
   createResolvers({
     Event: {
       slug: {
-        resolve: source => slugfy(source.name)
+        resolve: source => slugify(source.name)
       }
     }
   })
 }
 
 // 4. query for events and create pages
+
+exports.createPages = async ({ actions, graphql, reporter }) => {
+  const basePath = '/'
+  actions.createPage({
+    path: basePath,
+    component: require.resolve('./src/templates/events.js')
+  })
+
+  const result = await graphql(`
+    query {
+      allEvent(sort: { fields: startDate, order: ASC }) {
+        nodes {
+          id
+          slug
+        }
+      }
+    }
+  `)
+  if (result.errors) {
+    reporter.panic('error loading events', reporter.errors)
+    return;
+  }
+
+  const events = result.data.allEvent.nodes;
+
+  events.forEach(event => {
+    const { slug } = event
+    actions.createPage({
+      path: slug,
+      component: require.resolve('./src/templates/event.js'),
+      context: {
+        eventID: event.id
+      }
+    })
+  })
+}
