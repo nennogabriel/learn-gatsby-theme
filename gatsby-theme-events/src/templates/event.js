@@ -11,6 +11,7 @@ export const query = graphql`
       name
       url
       startDate(formatString: "MMMM D, YYYY")
+      endDate(formatString: "MMMM D, YYYY")
       location
       slug
     }
